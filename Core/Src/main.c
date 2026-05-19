@@ -25,6 +25,8 @@
 /* USER CODE BEGIN Includes */
 #include "lwip/sockets.h"
 #include "mqtt_task.h"
+#include "json.h"
+#include "diag.h"
 #include <string.h>
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -81,19 +83,13 @@ void tcp_client_task(void *argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-/* Test handler for the MQTT subscription on "shuttle/wcs".
+/* Handler for the MQTT subscription on "shuttle/wcs".
  * Runs on lwIP's tcpip_thread - must be FAST, no blocking, no slow I/O.
- * We just bump a counter and snapshot length so you can see message
- * arrivals in CubeIDE's Live Expressions (along with mqtt_last_payload
- * from mqtt_task.c, which already holds the bytes). */
-volatile uint32_t mqtt_cmd_recv_count = 0;
-volatile uint16_t mqtt_cmd_last_len   = 0;
-
+ * Just enqueues the raw bytes to the JSON worker task for parsing. */
 static void on_cmd(const char *t, const void *p, size_t n, void *ctx)
 {
-    (void)t; (void)p; (void)ctx;
-    mqtt_cmd_last_len   = (uint16_t)n;
-    mqtt_cmd_recv_count++;
+    (void)t; (void)ctx;
+    json_handler_enqueue(p, n);
 }
 
 /* USER CODE END 0 */
@@ -176,6 +172,8 @@ int main(void)
       .password     = NULL,
   };
   mqtt_init(&mqtt_cfg);
+  json_handler_init();
+  diag_init();
 
   /* USER CODE END RTOS_THREADS */
 
