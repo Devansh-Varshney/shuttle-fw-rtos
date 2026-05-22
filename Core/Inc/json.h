@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 #ifndef JSON_MSG_QUEUE_DEPTH
-#define JSON_MSG_QUEUE_DEPTH    8
+#define JSON_MSG_QUEUE_DEPTH    32
 #endif
 
 #ifndef JSON_WORKER_STACK_BYTES

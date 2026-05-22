@@ -174,11 +174,11 @@ static void process_json(const char *json_str)
         cJSON_AddNumberToObject(resp, "y_pick",  s_pp_y_pick);
         cJSON_AddNumberToObject(resp, "x_place", s_pp_x_place);
         cJSON_AddNumberToObject(resp, "y_place", s_pp_y_place);
-        cJSON_AddNumberToObject(resp, "valid",   (double)s_pp_valid);
+//        cJSON_AddNumberToObject(resp, "valid",   (double)s_pp_valid);
 
         char *out = cJSON_PrintUnformatted(resp);
         if (out) {
-            mqtt_app_publish("shuttle/forwaded", out, strlen(out), 1, false);
+            mqtt_app_publish("shuttle/shuttle1/forwaded", out, strlen(out), 1, false);
             cJSON_free(out);   /* free the printed string */
         }
         cJSON_Delete(resp);    /* free the response tree */

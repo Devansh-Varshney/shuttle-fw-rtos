@@ -164,7 +164,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   static const mqtt_config_t mqtt_cfg = {
-      .broker_ip    = "192.168.0.37",
+      .broker_ip    = "192.168.0.36",
       .broker_port  = 1883,
       .client_id    = "shuttle_1",
       .keep_alive_s = 60,
@@ -471,13 +471,13 @@ void StartDefaultTask(void *argument)
   * inside mqtt_subscribe is safe to use). The registration is kept in
   * our subscription table; the mqtt_task will replay it to the broker
   * automatically on every connect, including after a cable cycle. */
- mqtt_app_subscribe("shuttle/wcs", 1, on_cmd, NULL);
+ mqtt_app_subscribe("shuttle/shuttle1/wcs", 1, on_cmd, NULL);
 
   /* Infinite loop */
   for(;;)
   {
     osDelay(5000);   // let MQTT connect first
-mqtt_app_publish_string("shuttle/telemetry", "hello from generic API");
+mqtt_app_publish_string("shuttle/shuttle1/telemetry", "This is shuttle 1!!!");
   }
   /* USER CODE END 5 */
 }

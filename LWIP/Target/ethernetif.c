@@ -423,8 +423,16 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
   TxConfig.Length = p->tot_len;
   TxConfig.TxBuffer = Txbuffer;
   TxConfig.pData = p;
-
+  //CLAUDE FIX
+  for (q = p; q != NULL; q = q->next) {
+      uint32_t addr  = (uint32_t)q->payload;
+      uint32_t start = addr & ~0x1FU;
+      uint32_t end   = (addr + q->len + 31U) & ~0x1FU;
+      SCB_CleanDCache_by_Addr((uint32_t *)start, (int32_t)(end - start));
+  }
+  //CLAUDE FIX END
   pbuf_ref(p);
+
 
   do
   {

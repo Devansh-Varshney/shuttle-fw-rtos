@@ -26,7 +26,7 @@
  * Compile-time limits (tune to your needs)
  * ============================================================ */
 #define MQTT_MAX_SUBS               16
-#define MQTT_PUB_QUEUE_DEPTH        8
+#define MQTT_PUB_QUEUE_DEPTH        32
 #define MQTT_TOPIC_BUF_SIZE         128
 #define MQTT_PAYLOAD_BUF_SIZE       256
 #define MQTT_WILL_PAYLOAD_SIZE      64
@@ -586,7 +586,7 @@ static void mqtt_task(void *arg)
 
         /* --- link edges --- */
         if (link_was_up && !link_now) {
-            tcpip_callback(do_disconnect, NULL);
+            (void)tcpip_callback(do_disconnect, NULL);
             mqtt_connect_status = MQTT_STATUS_IDLE;
             invoke_state_cb(false); //tells the application that mqtt is disconnected
         } else if (!link_was_up && link_now) {
@@ -603,7 +603,7 @@ static void mqtt_task(void *arg)
          * health -- effectively bypassing backoff. */
         if (s_force_reconnect) {
             s_force_reconnect = false;
-            tcpip_callback(do_disconnect, NULL);
+            (void)tcpip_callback(do_disconnect, NULL);
             mqtt_connect_status  = MQTT_STATUS_IDLE;
             uint32_t bk = compute_backoff_ms(s_connect_fail_streak);
             uint32_t wait = (bk > MQTT_LINK_SETTLE_MS) ? bk : MQTT_LINK_SETTLE_MS;
@@ -624,16 +624,21 @@ static void mqtt_task(void *arg)
 
             /* drain one publish per iteration, with timeout on inflight slot */
             struct pub_req r;
-            if (osMessageQueueGet(s_pub_queue, &r, NULL, 0) == osOK) {
+            if (osMessageQueueGet(s_pub_queue, &r, NULL, MQTT_LOOP_PERIOD_MS) == osOK) {
                 if (osSemaphoreAcquire(s_inflight_free, MQTT_PUB_TIMEOUT_MS) == osOK) {
                     s_inflight = r;
-                    tcpip_callback(do_publish, &s_inflight);
+                    err_t cb_err = tcpip_callback(do_publish, &s_inflight);
+                    if (cb_err != ERR_OK){
+                        osSemaphoreRelease(s_inflight_free);
+                        s_stat_pub_timeout_count++;
+                    }
                 } else {
                     /* Bug 3 fix: inflight slot wedged. Drop this message,
                      * count it, force reconnect to recover lwIP state. */
                     s_stat_pub_timeout_count++;
                     s_force_reconnect = true;
                 }
+                continue;
             }
         } else if (mqtt_connect_status == MQTT_STATUS_CONNECTING) {
             /* Bug AA: a connect attempt is in flight inside lwIP. Wait for
@@ -654,7 +659,11 @@ static void mqtt_task(void *arg)
             if ((int32_t)(now - s_next_connect_at_ms) >= 0) {
                 mqtt_connect_status        = MQTT_STATUS_CONNECTING;
                 s_connecting_started_at_ms = now;
-                tcpip_callback(do_connect, NULL);
+                if (tcpip_callback(do_connect, NULL) != ERR_OK) {
+                    mqtt_connect_status = MQTT_STATUS_IDLE;
+                    s_connect_fail_streak++;
+                    s_stat_connect_fail_count++;
+                }
                 /* Concern 5: exponential backoff. */
                 uint32_t backoff = compute_backoff_ms(s_connect_fail_streak);
                 s_next_connect_at_ms = osKernelGetTickCount() + backoff;

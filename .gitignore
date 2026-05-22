@@ -3,4 +3,7 @@ Debug/Core/Src/mqtt_task.cyclo
 Debug/Core/Src/mqtt_task.su
 Debug/FREERTOS_Ethernet_ RMII_LWIP_PING.list
 Debug/FREERTOS_Ethernet_ RMII_LWIP_PING.map
-/Debug/
+Debug/FREERTOS_Ethernet_ RMII_LWIP_PING.elf
+CLAUDE.md
+Debug/
+

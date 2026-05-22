@@ -115,7 +115,7 @@ static void diag_task(void *arg)
 
         if (n > 0 && n < (int)sizeof(s_diag_buf)) {
             /* publish — non-blocking; if queue is full this drops harmlessly */
-            mqtt_app_publish("shuttle/diag", s_diag_buf, (size_t)n, 1, false);
+            mqtt_app_publish("shuttle/shuttle1/diag", s_diag_buf, (size_t)n, 1, false);
         }
 
         /* --- LEDs --- */
