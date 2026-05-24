@@ -164,7 +164,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   static const mqtt_config_t mqtt_cfg = {
-      .broker_ip    = "192.168.0.36",
+      .broker_ip    = "192.168.0.37",
       .broker_port  = 1883,
       .client_id    = "shuttle_1",
       .keep_alive_s = 60,

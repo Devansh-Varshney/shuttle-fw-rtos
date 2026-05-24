@@ -17,7 +17,7 @@
 #include "lwip/tcpip.h"
 #include "lwip/ip_addr.h"
 #include "lwip/netif.h"
-
+#include "lwip/tcp.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -458,21 +458,39 @@ static void do_publish(void *arg)
 {
     struct pub_req *r = (struct pub_req *)arg;
 
-    if (s_client && mqtt_client_is_connected(s_client)) {
+    if (s_client && mqtt_client_is_connected(s_client) &&
+        s_client->conn != NULL)
+    {
+        struct tcp_pcb *pcb = s_client->conn;
+
+        /*
+         * NEW: check TCP send buffer before calling mqtt_publish().
+         * This does not reset or hide any Ethernet error.
+         * It only prevents feeding MQTT into lwIP when TCP has no send space.
+         */
+        if (tcp_sndbuf(pcb) < r->len)
+        {
+            mqtt_last_publish_err = ERR_MEM;
+            s_stat_last_error     = ERR_MEM;
+
+            osSemaphoreRelease(s_inflight_free);
+            return;
+        }
+
         err_t err = mqtt_publish(s_client, r->topic, r->payload, r->len,
                                  r->qos, r->retain ? 1 : 0,
                                  on_pub_done, NULL);
+
         if (err != ERR_OK) {
             mqtt_last_publish_err = (int32_t)err;
             s_stat_last_error     = (int32_t)err;
             osSemaphoreRelease(s_inflight_free);
         }
-        /* on success: on_pub_done releases the slot after PUBACK or disconnect */
+        /* on success: on_pub_done releases the slot */
     } else {
         osSemaphoreRelease(s_inflight_free);
     }
 }
-
 /* Apply all pending sub/unsub changes to the broker.
  * Iterates one entry at a time, holding the mutex only across the snapshot
  * (Concern 3).

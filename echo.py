@@ -56,8 +56,8 @@ import paho.mqtt.client as mqtt
 
 DEFAULT_BROKER       = "192.168.0.37"
 DEFAULT_PORT         = 1883
-DEFAULT_TX_TOPIC     = "shuttle/wcs"
-DEFAULT_RX_TOPIC     = "shuttle/forwaded"
+DEFAULT_TX_TOPIC     = "shuttle/shuttle1/wcs"
+DEFAULT_RX_TOPIC     = "shuttle/shuttle1/forwaded"
 DEFAULT_INTERVAL_MS  = 1000
 RESPONSE_TIMEOUT_S   = 5.0
 SUMMARY_INTERVAL_S   = 10.0
